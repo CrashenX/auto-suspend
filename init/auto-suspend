@@ -1,0 +1,97 @@
+#!/bin/sh
+# auto-suspend: put device to sleep when no user activity after preset time
+#
+# Copyright (c) 2013 Jesse J. Cook
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+### BEGIN INIT INFO
+# Provides:          auto-suspend
+# Required-Start:    x11-common $remote_fs
+# Required-Stop:     x11-common $remote_fs
+# Should-Start:
+# Should-Stop:
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Start/stop the auto-suspend daemon.
+### END INIT INFO
+
+. /lib/lsb/init-functions
+. /etc/auto-suspend.conf
+
+NAME="auto-suspend"
+DAEMON="/usr/bin/xautolock"
+LOCKER="/usr/local/bin/lock"
+PIDFILE="/var/run/$NAME.lock"
+
+DAEMON_ARGS="-time $AUTO_SUSPEND_TIME -locker '$LOCKER'"
+PID_ARGS="--pidfile $PIDFILE"
+START_STOP_ARGS="$PID_ARGS --name $(basename $DAEMON) --quiet"
+START_ARGS="$START_STOP_ARGS --make-pidfile --background --startas $DAEMON -- $DAEMON_ARGS"
+STOP_ARGS="$START_STOP_ARGS --retry INT/5/TERM/5"
+
+case $1 in
+    start)
+        log_daemon_msg "Starting $NAME daemon"
+        start-stop-daemon --start $START_ARGS
+        RC=$?
+        if [ $RC -eq 0 ]; then
+            log_progress_msg "Success"
+            log_end_msg 0
+        else
+            log_progress_msg "Already running;"
+            log_end_msg 1
+        fi
+    ;;
+    stop)
+        log_daemon_msg "Stopping $NAME daemon"
+        start-stop-daemon --stop $STOP_ARGS
+        RC=$?
+        if [ $RC -eq 0 ]; then
+            rm $PIDFILE
+            log_progress_msg "Success"
+            log_end_msg 0
+        else
+            log_progress_msg "Not running;"
+            log_end_msg 1
+        fi
+    ;;
+    restart|reload|force-reload)
+        $0 stop
+        sleep 2
+        $0 start
+    ;;
+    status)
+        log_daemon_msg "Retrieving $NAME status"
+        if [ -e $PIDFILE ]; then
+            log_progress_msg "Running"
+            log_end_msg 0
+        else
+            log_progress_msg "Stopped"
+            log_end_msg 0
+        fi
+    ;;
+    *)
+        log_success_msg \
+            "Usage: $0 {start|stop|status|restart|reload|force-reload}"
+        exit 1
+    ;;
+esac
+
+exit 0
