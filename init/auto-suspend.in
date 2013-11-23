@@ -37,7 +37,7 @@
 
 NAME="auto-suspend"
 DAEMON="/usr/bin/xautolock"
-LOCKER="/usr/local/bin/lock"
+LOCKER="@CMAKE_INSTALL_PREFIX@/bin/lock"
 PIDFILE="/var/run/$NAME.lock"
 
 DAEMON_ARGS="-time $AUTO_SUSPEND_TIME -locker '$LOCKER'"
