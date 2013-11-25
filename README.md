@@ -8,9 +8,10 @@ Debian Sid.
 
 To install:
 
-     cd build
-     cmake ..
-     make install # as root
+     cd build                          # as user
+     cmake ..                          # as user
+     make install                      # as root
+     update-rc.d auto-suspend defaults # as root
 
 The default install prefix is `/usr/local/`. If you wish to change it to
 `/usr/`, instead run:
